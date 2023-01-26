@@ -1,0 +1,44 @@
+CREATE TABLE users (
+	id VARCHAR(100) NOT NULL,
+	user_name VARCHAR(50) NOT NULL UNIQUE,
+  	first_name VARCHAR(50) NOT NULL,
+  	last_name  VARCHAR(50) NOT NULL,
+	avatar VARCHAR(50) NOT NULL,
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP,
+	PRIMARY KEY (id)
+);
+
+CREATE TABLE rooms (
+	id VARCHAR(100) NOT NULL,
+	name VARCHAR(100) NOT NULL,
+	user_id VARCHAR(100) NOT NULL,
+	type VARCHAR(10) NOT NULL,
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP,
+	PRIMARY KEY (id),
+	FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE users_rooms (
+	user_id VARCHAR(100) NOT NULL,
+	room_id VARCHAR(100) NOT NULL,
+	PRIMARY KEY (user_id, room_id),
+	FOREIGN KEY (user_id) REFERENCES users(id),
+	FOREIGN KEY (room_id) REFERENCES rooms(id)
+);
+
+CREATE TABLE messages (
+	id VARCHAR(100) NOT NULL,
+	content TEXT NOT NULL,
+	user_id VARCHAR(100) NOT NULL,
+	room_id VARCHAR(100) NOT NULL,
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP,
+	PRIMARY KEY (id),
+	FOREIGN KEY (user_id) REFERENCES users(id),
+	FOREIGN KEY (room_id) REFERENCES rooms(id)
+);

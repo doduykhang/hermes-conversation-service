@@ -1,0 +1,7 @@
+version: "1"
+packages: 
+  - name: "mysql"
+    path: "./internal/db/mysql"
+    engine: "mysql"
+    schema: "./db/migration/"
+    queries: "./db/query/"
