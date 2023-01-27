@@ -25,13 +25,15 @@ type room struct {
 	queries *mysql.Queries
 	mapper *dtos.Mapper
 	auth Auth
+	queue Queue
 }
 
-func NewRoom(queries *mysql.Queries, mapper *dtos.Mapper, auth Auth) Room {
+func NewRoom(queries *mysql.Queries, mapper *dtos.Mapper, auth Auth, queue Queue) Room {
 	return &room{
 		queries: queries,
 		mapper: mapper,
 		auth: auth,
+		queue: queue,
 	}
 }
 
@@ -114,6 +116,10 @@ func (s *room) AddUserToRoom(request *dto.UserRoom, userID string) (error) {
 	var args mysql.AddUserToRoomParams
 	args.UserID = request.UserID
 	args.RoomID = request.RoomID
+	err = s.queue.PublishAddUserToRoomEvent(request.UserID, request.RoomID)
+	if err != nil {
+		return err
+	}
 	return s.queries.AddUserToRoom(context.Background(), args)
 }
 
@@ -129,5 +135,9 @@ func (s *room) RemoveUserFromRoom(request *dto.UserRoom, userID string) (error) 
 	var args mysql.RemoveUserFromRoomParams
 	args.UserID = request.UserID
 	args.RoomID = request.RoomID
+	err = s.queue.PublishRemoveUserFromRoomEvent(request.UserID, request.RoomID)
+	if err != nil {
+		return err
+	}
 	return s.queries.RemoveUserFromRoom(context.Background(), args)
 }

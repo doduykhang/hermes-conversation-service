@@ -3,17 +3,20 @@ package controller
 import (
 	"doduykhang/hermes-conversation/pkg/dto"
 	"doduykhang/hermes-conversation/pkg/service"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type Message struct {
 	messageService service.Message
+	queueService service.Queue
 }
 
-func NewMessage(service service.Message) *Message {
+func NewMessage(service service.Message, queue service.Queue) *Message {
 	return &Message{
 		messageService: service,
+		queueService: queue,
 	}
 }
 
@@ -44,4 +47,15 @@ func (m *Message) GetMessageOfRoom(c *fiber.Ctx) error {
 	}
 	
 	return c.JSON(response)
+}
+
+func (m *Message) WaitingForMessage() {
+	messageCh := make(chan dto.CreateMessageRequest)
+	go m.queueService.WaitingForMessageEvent(messageCh) 
+	for msg := range messageCh {
+		_, err := m.messageService.CreateMessage(&msg)	
+		if err != nil {
+			log.Printf("Error at controller.message.WaitingForMessage, %s\n", err)	
+		}
+	}
 }

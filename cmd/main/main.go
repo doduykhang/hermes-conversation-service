@@ -23,17 +23,19 @@ func main() {
 	//config
 	queries := mysql.New(db)
 	mapper := config.NewMapper()
+	rabbitMq := config.NewRabbitMq()
 	
 	//service 
+	queueService := service.NewQueue(rabbitMq)
 	authService := service.NewAuth(queries)
 	userService := service.NewUser(queries, mapper)
-	roomService := service.NewRoom(queries, mapper, authService)
+	roomService := service.NewRoom(queries, mapper, authService, queueService)
 	messageService := service.NewMessage(queries, mapper, authService)
 	
 	//controller 
 	userController := controller.NewUser(userService)
 	roomController := controller.NewRoom(roomService)
-	messageController := controller.NewMessage(messageService)
+	messageController := controller.NewMessage(messageService, queueService)
 
 	//route
 	route.UserRoute(api, userController)
