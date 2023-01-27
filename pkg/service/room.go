@@ -5,6 +5,7 @@ import (
 	"doduykhang/hermes-conversation/internal/db/mysql"
 	"doduykhang/hermes-conversation/pkg/constant"
 	"doduykhang/hermes-conversation/pkg/dto"
+	"errors"
 
 	dtos "github.com/dranikpg/dto-mapper"
 
@@ -15,25 +16,34 @@ type Room interface {
 	CreateGroupRoom(request *dto.CreateGroupRoomRequest) (*dto.RoomDTO, error)
 	CreatePrivateRoom(request *dto.CreatePrivateRoomRequest) (*dto.RoomDTO, error)
 	GetUserRoom(userID string) ([]dto.RoomDTO, error)
-	AddUserToRoom(request *dto.UserRoom) (error)
-	RemoveUserFromRoom(request *dto.UserRoom) (error)
-	GetRoomById(roomID string) (*dto.RoomDTO, error)
+	AddUserToRoom(request *dto.UserRoom, userID string) (error)
+	RemoveUserFromRoom(request *dto.UserRoom, userID string) (error)
+	GetRoomById(roomID string, userID string) (*dto.RoomDTO, error)
 }
 
 type room struct {
 	queries *mysql.Queries
 	mapper *dtos.Mapper
+	auth Auth
 }
 
-
-func NewRoom(queries *mysql.Queries, mapper *dtos.Mapper) Room {
+func NewRoom(queries *mysql.Queries, mapper *dtos.Mapper, auth Auth) Room {
 	return &room{
 		queries: queries,
 		mapper: mapper,
+		auth: auth,
 	}
 }
 
-func (s *room) GetRoomById(roomID string) (*dto.RoomDTO, error) {
+func (s *room) GetRoomById(roomID string, userID string) (*dto.RoomDTO, error) {
+	check, err := s.auth.CheckUserInRoom(userID, roomID)
+	if err != nil {
+		return nil, err 
+	}
+
+	if !check {
+		return nil, errors.New("You are not allowed here, get out")
+	}
 	room, err := s.queries.GetRoomByID(context.Background(), roomID)
 	if err != nil {
 		return nil, err 
@@ -92,14 +102,30 @@ func (s *room) GetUserRoom(userID string) ([]dto.RoomDTO, error) {
 	return dto, nil
 }
 
-func (s *room) AddUserToRoom(request *dto.UserRoom) (error) {	
+func (s *room) AddUserToRoom(request *dto.UserRoom, userID string) (error) {	
+	check, err := s.auth.CheckUserOwnRoom(userID, request.RoomID)
+	if err != nil {
+		return err
+	}
+	if !check {
+		return errors.New("You are not allow to do this action")
+	}
+
 	var args mysql.AddUserToRoomParams
 	args.UserID = request.UserID
 	args.RoomID = request.RoomID
 	return s.queries.AddUserToRoom(context.Background(), args)
 }
 
-func (s *room) RemoveUserFromRoom(request *dto.UserRoom) (error) {
+func (s *room) RemoveUserFromRoom(request *dto.UserRoom, userID string) (error) {
+	check, err := s.auth.CheckUserOwnRoom(userID, request.RoomID)
+	if err != nil {
+		return err
+	}
+	if !check {
+		return errors.New("You are not allow to do this action")
+	}
+
 	var args mysql.RemoveUserFromRoomParams
 	args.UserID = request.UserID
 	args.RoomID = request.RoomID

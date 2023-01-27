@@ -26,4 +26,10 @@ WHERE id IN (
 	WHERE ur.user_id = ?
 );
 
+/* name: CheckUserInRoom :one */
+SELECT * 
+FROM users_rooms
+WHERE user_id = ? and room_id = ?
+LIMIT 1;
+
 

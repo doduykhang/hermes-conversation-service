@@ -55,7 +55,12 @@ func (r *Room) AddUserToRoom(c *fiber.Ctx) error {
 		return err
 	}
 
-	err := r.roomService.AddUserToRoom(&request)
+	userID := string(c.Request().Header.Peek("X-User-Id"))
+	if userID == "" {
+		return fiber.ErrUnprocessableEntity
+	}
+
+	err := r.roomService.AddUserToRoom(&request, userID)
 	if err != nil {
 		return err
 	}
@@ -68,7 +73,12 @@ func (r *Room) RemoveUserFromRoom(c *fiber.Ctx) error {
 		return err
 	}
 
-	err := r.roomService.RemoveUserFromRoom(&request)
+	userID := string(c.Request().Header.Peek("X-User-Id"))
+	if userID == "" {
+		return fiber.ErrUnprocessableEntity
+	}
+
+	err := r.roomService.RemoveUserFromRoom(&request, userID)
 	if err != nil {
 		return err
 	}
@@ -77,8 +87,12 @@ func (r *Room) RemoveUserFromRoom(c *fiber.Ctx) error {
 
 func (r *Room) GetRoomByID(c *fiber.Ctx) error {
 	roomID := c.Params("roomID")
+	userID := string(c.Request().Header.Peek("X-User-Id"))
+	if userID == "" {
+		return fiber.ErrUnprocessableEntity
+	}
 
-	response, err := r.roomService.GetRoomById(roomID)
+	response, err := r.roomService.GetRoomById(roomID, userID)
 	if err != nil {
 		return err
 	}

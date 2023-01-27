@@ -13,7 +13,15 @@ WHERE id = ?;
 
 /* name: DeleteUser :exec */
 DELETE FROM users
-WHERE id = ?
+WHERE id = ?;
 
-
+/* name: SearchUserNotInRoom :many */
+SELECT * 
+FROM users u
+WHERE u.id NOT IN (
+	SELECT user_id
+	FROM users_rooms ur 
+	WHERE room_id = ?
+)
+AND u.user_name LIKE ?
 

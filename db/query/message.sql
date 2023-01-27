@@ -17,6 +17,6 @@ select *, (
 	SELECT JSON_OBJECT('id', u.id, 'firstName', u.first_name, 'lastName', u.last_name, 'avatar', u.avatar)
     	FROM users u
     	WHERE u.id = m.user_id
-) as user
+) as sender
 from messages m
 where room_id = ?;

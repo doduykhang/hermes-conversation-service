@@ -12,6 +12,7 @@ import (
 
 type User interface {
 	CreateUser(request *dto.CreateUser) (*dto.UserDTO, error)
+	SearchForUserNotInRoom(roomID string, userName string) ([]dto.UserDTO, error)
 }
 
 type user struct {
@@ -55,3 +56,20 @@ func (s *user) CreateUser(request *dto.CreateUser) (*dto.UserDTO, error) {
 	return &dto, nil
 }
 
+func (s *user) SearchForUserNotInRoom(roomID string, userName string) ([]dto.UserDTO, error) {
+	users, err := s.queries.SearchUserNotInRoom(context.Background(), mysql.SearchUserNotInRoomParams{
+		UserName: "%" + userName + "%",
+		RoomID: roomID,
+	})	
+	if err != nil {
+		return nil, err
+	}
+
+	var dtos []dto.UserDTO
+	err = s.mapper.Map(&dtos, &users)
+	if err != nil {
+		return nil, err
+	}
+	
+	return dtos, nil
+}

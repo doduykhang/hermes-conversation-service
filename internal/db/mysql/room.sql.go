@@ -9,6 +9,25 @@ import (
 	"context"
 )
 
+const checkUserInRoom = `-- name: CheckUserInRoom :one
+SELECT user_id, room_id 
+FROM users_rooms
+WHERE user_id = ? and room_id = ?
+LIMIT 1
+`
+
+type CheckUserInRoomParams struct {
+	UserID string
+	RoomID string
+}
+
+func (q *Queries) CheckUserInRoom(ctx context.Context, arg CheckUserInRoomParams) (UsersRoom, error) {
+	row := q.db.QueryRowContext(ctx, checkUserInRoom, arg.UserID, arg.RoomID)
+	var i UsersRoom
+	err := row.Scan(&i.UserID, &i.RoomID)
+	return i, err
+}
+
 const createRoom = `-- name: CreateRoom :exec
 INSERT INTO rooms (id, name, user_id, type)
 VALUES (?, ?, ?, ?)

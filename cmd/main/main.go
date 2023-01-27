@@ -25,16 +25,20 @@ func main() {
 	mapper := config.NewMapper()
 	
 	//service 
+	authService := service.NewAuth(queries)
 	userService := service.NewUser(queries, mapper)
-	roomService := service.NewRoom(queries, mapper)
+	roomService := service.NewRoom(queries, mapper, authService)
+	messageService := service.NewMessage(queries, mapper, authService)
 	
 	//controller 
 	userController := controller.NewUser(userService)
 	roomController := controller.NewRoom(roomService)
+	messageController := controller.NewMessage(messageService)
 
 	//route
 	route.UserRoute(api, userController)
 	route.RoomRoute(api, roomController)
+	route.MessageRoute(api, messageController)
 
 	log.Fatal(app.Listen(":8080"))
 }

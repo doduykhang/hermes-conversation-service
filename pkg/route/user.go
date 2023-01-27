@@ -9,4 +9,5 @@ import (
 func UserRoute(r fiber.Router, userController *controller.User) {
 	user := r.Group("/user")
 	user.Post("/", userController.CreateUser)
+	user.Get("/:roomID/:userName", userController.SearchUserNotInRoom)
 }

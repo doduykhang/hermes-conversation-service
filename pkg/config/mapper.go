@@ -1,10 +1,10 @@
 package config
 
 import (
-	"github.com/dranikpg/dto-mapper"
+	dtos "github.com/dranikpg/dto-mapper"
 )
 
-func NewMapper () *dto.Mapper {
-	mapper := &dto.Mapper{}
+func NewMapper () *dtos.Mapper {
+	mapper := &dtos.Mapper{}
 	return mapper
 }

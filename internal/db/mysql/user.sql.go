@@ -64,6 +64,54 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 	return i, err
 }
 
+const searchUserNotInRoom = `-- name: SearchUserNotInRoom :many
+SELECT id, user_name, first_name, last_name, avatar, created_at, updated_at, deleted_at 
+FROM users u
+WHERE u.id NOT IN (
+	SELECT user_id
+	FROM users_rooms ur 
+	WHERE room_id = ?
+)
+AND u.user_name LIKE ?
+`
+
+type SearchUserNotInRoomParams struct {
+	RoomID   string
+	UserName string
+}
+
+func (q *Queries) SearchUserNotInRoom(ctx context.Context, arg SearchUserNotInRoomParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, searchUserNotInRoom, arg.RoomID, arg.UserName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserName,
+			&i.FirstName,
+			&i.LastName,
+			&i.Avatar,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateUser = `-- name: UpdateUser :exec
 UPDATE users 
 SET first_name = ?, last_name = ?, avatar = ?

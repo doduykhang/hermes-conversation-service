@@ -29,3 +29,18 @@ func (u *User) CreateUser(c *fiber.Ctx) error {
     	}
     	return c.JSON(response)
 }
+
+func (u *User) SearchUserNotInRoom(c *fiber.Ctx) error {
+	var request dto.CreateUser
+	if err := c.BodyParser(&request); err != nil {
+        	return err
+    	}
+	userName := c.Params("userName")	
+	roomID := c.Params("roomID")	
+
+	response, err := u.userService.SearchForUserNotInRoom(roomID, userName) 
+	if err != nil {
+        	return err
+    	}
+    	return c.JSON(response)
+}

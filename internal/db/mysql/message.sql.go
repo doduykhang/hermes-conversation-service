@@ -50,7 +50,7 @@ select id, content, user_id, room_id, created_at, updated_at, deleted_at, (
 	SELECT JSON_OBJECT('id', u.id, 'firstName', u.first_name, 'lastName', u.last_name, 'avatar', u.avatar)
     	FROM users u
     	WHERE u.id = m.user_id
-) as user
+) as sender
 from messages m
 where room_id = ?
 `
@@ -63,7 +63,7 @@ type GetMessageOfRoomRow struct {
 	CreatedAt time.Time
 	UpdatedAt sql.NullTime
 	DeletedAt sql.NullTime
-	User      json.RawMessage
+	Sender    json.RawMessage
 }
 
 func (q *Queries) GetMessageOfRoom(ctx context.Context, roomID string) ([]GetMessageOfRoomRow, error) {
@@ -83,7 +83,7 @@ func (q *Queries) GetMessageOfRoom(ctx context.Context, roomID string) ([]GetMes
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
-			&i.User,
+			&i.Sender,
 		); err != nil {
 			return nil, err
 		}
