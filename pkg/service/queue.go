@@ -11,6 +11,7 @@ import (
 
 type Queue interface {
 	WaitingForMessageEvent(messageCh chan dto.CreateMessageRequest) 
+	WaitingForCreateUserEvent(messageCh chan dto.CreateUser) 
 	PublishAddUserToRoomEvent(userID string, roomID string) error 
 	PublishRemoveUserFromRoomEvent(userID string, roomID string) error 
 }
@@ -67,6 +68,51 @@ func (queue *queue) WaitingForMessageEvent(messageCh chan dto.CreateMessageReque
 		messageCh <- request
 	}
 }
+
+func (queue *queue) WaitingForCreateUserEvent(userCh chan dto.CreateUser) {
+	ch, err := queue.conn.Channel()
+	defer ch.Close()
+	if err != nil {
+		log.Panic(err)
+	}
+	q, err := ch.QueueDeclare(
+  		"create-user", // name
+  		false,   // durable
+  		false,   // delete when unused
+  		false,   // exclusive
+  		false,   // no-wait
+  		nil,     // arguments
+	)
+
+	if err != nil {
+		log.Panic(err)
+	}
+	msgs, err := ch.Consume(
+  		q.Name, // queue
+  		"",     // consumer
+  		true,   // auto-ack
+  		false,  // exclusive
+  		false,  // no-local
+  		false,  // no-wait
+  		nil,    // args
+	)
+
+	if err != nil {
+		log.Panic(err)
+	}
+	
+	for msg := range msgs {
+		var request dto.CreateUser
+		err := json.Unmarshal(msg.Body, &request)
+		if err != nil {
+			log.Printf("Error at service.Queue.WaitingForCreateUserEvent, %s\n", err)
+			continue
+		}
+		userCh <- request
+	}
+
+}
+
 func (queue *queue) PublishAddUserToRoomEvent(userID string, roomID string) (error) {
 
 	ch, err := queue.conn.Channel()

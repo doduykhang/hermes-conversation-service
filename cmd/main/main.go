@@ -33,7 +33,7 @@ func main() {
 	messageService := service.NewMessage(queries, mapper, authService)
 	
 	//controller 
-	userController := controller.NewUser(userService)
+	userController := controller.NewUser(userService, queueService)
 	roomController := controller.NewRoom(roomService)
 	messageController := controller.NewMessage(messageService, queueService)
 

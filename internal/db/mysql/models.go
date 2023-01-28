@@ -31,7 +31,7 @@ type Room struct {
 
 type User struct {
 	ID        string
-	UserName  string
+	Email     string
 	FirstName string
 	LastName  string
 	Avatar    string

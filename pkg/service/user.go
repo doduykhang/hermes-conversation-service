@@ -7,7 +7,6 @@ import (
 	"log"
 
 	dtos "github.com/dranikpg/dto-mapper"
-	"github.com/google/uuid"
 )
 
 type User interface {
@@ -36,8 +35,6 @@ func (s *user) CreateUser(request *dto.CreateUser) (*dto.UserDTO, error) {
 		return nil, err
 	}
 
-	id := uuid.New()
-	args.ID = id.String()
 	_, err = s.queries.CreateUser(context.Background(), args)
 	if err != nil {
 		log.Printf("Error at service.user.CreateUser, %s\n", err)
@@ -56,9 +53,9 @@ func (s *user) CreateUser(request *dto.CreateUser) (*dto.UserDTO, error) {
 	return &dto, nil
 }
 
-func (s *user) SearchForUserNotInRoom(roomID string, userName string) ([]dto.UserDTO, error) {
+func (s *user) SearchForUserNotInRoom(roomID string, email string) ([]dto.UserDTO, error) {
 	users, err := s.queries.SearchUserNotInRoom(context.Background(), mysql.SearchUserNotInRoomParams{
-		UserName: "%" + userName + "%",
+		Email: "%" + email + "%",
 		RoomID: roomID,
 	})	
 	if err != nil {

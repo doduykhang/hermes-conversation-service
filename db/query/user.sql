@@ -3,7 +3,7 @@ SELECT * FROM users
 WHERE id = ? LIMIT 1;
 
 /* name: CreateUser :execresult */
-INSERT INTO users (id, first_name, last_name, user_name, avatar)
+INSERT INTO users (id, first_name, last_name, email, avatar)
 VALUES (?, ?, ?, ?, ?);
 
 /* name: UpdateUser :exec */
@@ -23,5 +23,5 @@ WHERE u.id NOT IN (
 	FROM users_rooms ur 
 	WHERE room_id = ?
 )
-AND u.user_name LIKE ?
+AND u.email LIKE ?
 

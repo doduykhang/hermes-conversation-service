@@ -3,17 +3,20 @@ package controller
 import (
 	"doduykhang/hermes-conversation/pkg/dto"
 	"doduykhang/hermes-conversation/pkg/service"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type User struct {
 	userService service.User		
+	queueService service.Queue
 }
 
-func NewUser(userService service.User) *User {
+func NewUser(userService service.User, queueService service.Queue) *User {
 	return &User {
 		userService: userService,
+		queueService: queueService,
 	}
 }
 
@@ -43,4 +46,15 @@ func (u *User) SearchUserNotInRoom(c *fiber.Ctx) error {
         	return err
     	}
     	return c.JSON(response)
+}
+
+func (u *User) WaitingForCreateUser() {
+	messageCh := make(chan dto.CreateUser)
+	go u.queueService.WaitingForCreateUserEvent(messageCh) 
+	for msg := range messageCh {
+		_, err := u.userService.CreateUser(&msg)	
+		if err != nil {
+			log.Printf("Error at controller.user.WaitingForCreateUser, %s\n", err)	
+		}
+	}
 }

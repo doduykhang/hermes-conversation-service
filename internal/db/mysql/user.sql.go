@@ -11,7 +11,7 @@ import (
 )
 
 const createUser = `-- name: CreateUser :execresult
-INSERT INTO users (id, first_name, last_name, user_name, avatar)
+INSERT INTO users (id, first_name, last_name, email, avatar)
 VALUES (?, ?, ?, ?, ?)
 `
 
@@ -19,7 +19,7 @@ type CreateUserParams struct {
 	ID        string
 	FirstName string
 	LastName  string
-	UserName  string
+	Email     string
 	Avatar    string
 }
 
@@ -28,7 +28,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 		arg.ID,
 		arg.FirstName,
 		arg.LastName,
-		arg.UserName,
+		arg.Email,
 		arg.Avatar,
 	)
 }
@@ -44,7 +44,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id string) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, user_name, first_name, last_name, avatar, created_at, updated_at, deleted_at FROM users
+SELECT id, email, first_name, last_name, avatar, created_at, updated_at, deleted_at FROM users
 WHERE id = ? LIMIT 1
 `
 
@@ -53,7 +53,7 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.UserName,
+		&i.Email,
 		&i.FirstName,
 		&i.LastName,
 		&i.Avatar,
@@ -65,23 +65,23 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 }
 
 const searchUserNotInRoom = `-- name: SearchUserNotInRoom :many
-SELECT id, user_name, first_name, last_name, avatar, created_at, updated_at, deleted_at 
+SELECT id, email, first_name, last_name, avatar, created_at, updated_at, deleted_at 
 FROM users u
 WHERE u.id NOT IN (
 	SELECT user_id
 	FROM users_rooms ur 
 	WHERE room_id = ?
 )
-AND u.user_name LIKE ?
+AND u.email LIKE ?
 `
 
 type SearchUserNotInRoomParams struct {
-	RoomID   string
-	UserName string
+	RoomID string
+	Email  string
 }
 
 func (q *Queries) SearchUserNotInRoom(ctx context.Context, arg SearchUserNotInRoomParams) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, searchUserNotInRoom, arg.RoomID, arg.UserName)
+	rows, err := q.db.QueryContext(ctx, searchUserNotInRoom, arg.RoomID, arg.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (q *Queries) SearchUserNotInRoom(ctx context.Context, arg SearchUserNotInRo
 		var i User
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserName,
+			&i.Email,
 			&i.FirstName,
 			&i.LastName,
 			&i.Avatar,
