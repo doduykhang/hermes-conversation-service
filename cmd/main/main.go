@@ -16,7 +16,7 @@ import (
 func main() {
 	app := fiber.New()
 
- 	api := app.Group("/api", logger.New()) // /api
+ 	api := app.Group("/api/conversation", logger.New()) // /api
 
 	db := config.NewDB("mysql", "sammy:password@/hermes_conversation?parseTime=True&loc=Local")
 	
@@ -29,7 +29,7 @@ func main() {
 	queueService := service.NewQueue(rabbitMq)
 	authService := service.NewAuth(queries)
 	userService := service.NewUser(queries, mapper)
-	roomService := service.NewRoom(queries, mapper, authService, queueService)
+	roomService := service.NewRoom(queries, mapper, authService, queueService, userService)
 	messageService := service.NewMessage(queries, mapper, authService)
 	
 	//controller 
@@ -42,5 +42,5 @@ func main() {
 	route.RoomRoute(api, roomController)
 	route.MessageRoute(api, messageController)
 
-	log.Fatal(app.Listen(":8080"))
+	log.Fatal(app.Listen(":8083"))
 }

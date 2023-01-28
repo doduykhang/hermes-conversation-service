@@ -26,14 +26,16 @@ type room struct {
 	mapper *dtos.Mapper
 	auth Auth
 	queue Queue
+	userService User	
 }
 
-func NewRoom(queries *mysql.Queries, mapper *dtos.Mapper, auth Auth, queue Queue) Room {
+func NewRoom(queries *mysql.Queries, mapper *dtos.Mapper, auth Auth, queue Queue, userService User) Room {
 	return &room{
 		queries: queries,
 		mapper: mapper,
 		auth: auth,
 		queue: queue,
+		userService: userService,
 	}
 }
 
@@ -70,12 +72,14 @@ func (s *room) CreateGroupRoom(request *dto.CreateGroupRoomRequest) (*dto.RoomDT
 		return nil, err 
 	}
 
-	
-	err = s.queries.AddUserToRoom(context.Background(), mysql.AddUserToRoomParams{
-		UserID: request.UserID,
-		RoomID: args.ID,
-	})
-
+	s.AddUserToRoom(
+		&dto.UserRoom{
+			UserID: args.UserID,
+			RoomID: args.ID,
+		},
+		args.UserID,
+	)
+		
 	var dto dto.RoomDTO
 	err = s.mapper.Map(&dto, args)
 	if err != nil {
