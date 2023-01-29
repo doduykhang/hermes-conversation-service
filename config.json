@@ -1,0 +1,21 @@
+{
+	"REDIS": {
+		"HOST": "localhost",
+		"PORT": "6379",
+		"PASSWORD": ""
+	},
+	"RABBIT_MQ": {
+		"HOST": "localhost",
+		"PORT": "5672",
+		"USER": "guest",
+		"PASSWORD": "guest"
+	},
+	"DB": {
+		"HOST": "",
+		"PORT": "",
+		"USER": "sammy",
+		"PASSWORD": "password",
+		"NAME": "hermes_conversation",
+		"DRIVER": "mysql"
+	}
+}

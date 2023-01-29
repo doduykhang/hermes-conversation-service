@@ -18,12 +18,13 @@ func main() {
 
  	api := app.Group("/api/conversation", logger.New()) // /api
 
-	db := config.NewDB("mysql", "sammy:password@/hermes_conversation?parseTime=True&loc=Local")
 	
 	//config
+	conf := config.LoadEnv(".")
+	db := config.NewDB(conf)
 	queries := mysql.New(db)
 	mapper := config.NewMapper()
-	rabbitMq := config.NewRabbitMq()
+	rabbitMq := config.NewRabbitMq(conf)
 	
 	//service 
 	queueService := service.NewQueue(rabbitMq)
