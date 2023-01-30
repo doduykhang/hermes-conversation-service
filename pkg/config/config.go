@@ -2,9 +2,14 @@ package config
 
 import (
 	"log"
+	"strings"
 
 	"github.com/spf13/viper"
 )
+
+type Server struct {
+	Port string `mapstructure:"PORT"`
+}
 
 type DB struct {
 	Host string `mapstructure:"HOST"`
@@ -23,15 +28,17 @@ type RabbitMQ struct {
 }
 
 type Config struct {
+	Server Server `mapstructure:"SERVER"`
 	DB DB `mapstructure:"DB"`
-	RabbitMQ RabbitMQ `mapstructure:"RABBIT_MQ"`
+	RabbitMQ RabbitMQ `mapstructure:"RABBITMQ"`
 }
 
 func LoadEnv(path string) (*Config) {
-	viper.AddConfigPath(path)
-	viper.SetConfigName("config")
-	viper.SetConfigType("json")
-
+	replacer := strings.NewReplacer(".", "_")
+    	viper.SetEnvKeyReplacer(replacer)
+	viper.SetConfigName("config") // name of config file (without extension)
+	viper.SetConfigType("json") // REQUIRED if the config file does not have the extension in the name
+	viper.AddConfigPath(path)               // optionally look for config in the working directory
 	viper.AutomaticEnv()
 
 	err := viper.ReadInConfig()

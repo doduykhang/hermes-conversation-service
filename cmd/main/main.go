@@ -6,6 +6,7 @@ import (
 	"doduykhang/hermes-conversation/pkg/controller"
 	"doduykhang/hermes-conversation/pkg/route"
 	"doduykhang/hermes-conversation/pkg/service"
+	"fmt"
 	"log"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -18,13 +19,14 @@ func main() {
 
  	api := app.Group("/api/conversation", logger.New()) // /api
 
-	
 	//config
 	conf := config.LoadEnv(".")
 	db := config.NewDB(conf)
 	queries := mysql.New(db)
 	mapper := config.NewMapper()
 	rabbitMq := config.NewRabbitMq(conf)
+
+	config.Migrate(conf)
 	
 	//service 
 	queueService := service.NewQueue(rabbitMq)
@@ -43,5 +45,5 @@ func main() {
 	route.RoomRoute(api, roomController)
 	route.MessageRoute(api, messageController)
 
-	log.Fatal(app.Listen(":8083"))
+	log.Fatal(app.Listen(fmt.Sprintf(":%s", conf.Server.Port)))
 }

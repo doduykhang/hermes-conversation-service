@@ -4,7 +4,7 @@
 		"PORT": "6379",
 		"PASSWORD": ""
 	},
-	"RABBIT_MQ": {
+	"RABBITMQ": {
 		"HOST": "localhost",
 		"PORT": "5672",
 		"USER": "guest",
