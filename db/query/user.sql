@@ -23,5 +23,21 @@ WHERE u.id NOT IN (
 	FROM users_rooms ur 
 	WHERE room_id = ?
 )
-AND u.email LIKE ?
+AND u.email LIKE ?;
+
+/* name: SearchUser :many */
+SELECT * 
+FROM users u
+WHERE u.email LIKE ?
+AND NOT EXISTS (
+	SELECT * 
+	FROM rooms r
+	WHERE r.type = "PRIVATE"
+	AND (
+		SELECT COUNT(*)
+		FROM users_rooms ur
+		WHERE ur.room_id = r.id AND (ur.user_id = u.id OR ur.user_id = ?)
+	) = 2
+)
+AND u.id != ?
 

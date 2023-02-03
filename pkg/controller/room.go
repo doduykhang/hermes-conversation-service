@@ -36,6 +36,25 @@ func (r *Room) CreateGroupRoom(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
+func (r *Room) CreatePrivateRoom(c *fiber.Ctx) error {
+	var request dto.CreatePrivateRoomRequest
+	if err := c.BodyParser(&request); err != nil {
+		return err
+	}
+
+	userID := string(c.Request().Header.Peek("X-User-Id"))
+	if userID == "" {
+		return fiber.ErrUnprocessableEntity
+	}
+	request.UserID = userID
+
+	response, err := r.roomService.CreatePrivateRoom(&request)
+	if err != nil {
+		return err
+	}
+	return c.JSON(response)
+}
+
 func (r *Room) GetUserRoom(c *fiber.Ctx) error {
 	userID := string(c.Request().Header.Peek("X-User-Id"))
 	if userID == "" {
@@ -43,6 +62,19 @@ func (r *Room) GetUserRoom(c *fiber.Ctx) error {
 	}
 
 	response, err := r.roomService.GetUserRoom(userID)
+	if err != nil {
+		return err
+	}
+	return c.JSON(response)
+}
+
+func (r *Room) GetUserPrivateRoom(c *fiber.Ctx) error {
+	userID := string(c.Request().Header.Peek("X-User-Id"))
+	if userID == "" {
+		return fiber.ErrUnprocessableEntity
+	}
+
+	response, err := r.roomService.GetUserPrivateRoom(userID)
 	if err != nil {
 		return err
 	}

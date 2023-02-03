@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"doduykhang/hermes-conversation/internal/db/mysql"
+	"log"
 )
 
 type Auth interface {
@@ -37,8 +38,9 @@ func (s *auth) CheckUserInRoom(userID string, roomID string) (bool, error) {
 	return true, nil
 }
 func (s *auth) CheckUserOwnRoom(userID string, roomID string) (bool, error) {
-	room, err := s.queries.GetRoomByID(context.Background(), roomID)
+	room, err := s.queries.GetRoomNoMembers(context.Background(), roomID)
 	if err != nil {
+		log.Printf("Error CheckUserOwnRoom() %s\n", err)
 		return false, err
 	}
 	

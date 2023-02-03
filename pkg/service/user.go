@@ -11,7 +11,9 @@ import (
 
 type User interface {
 	CreateUser(request *dto.CreateUser) (*dto.UserDTO, error)
-	SearchForUserNotInRoom(roomID string, userName string) ([]dto.UserDTO, error)
+	SearchForUserNotInRoom(roomID string, email string) ([]dto.UserDTO, error)
+	SearchUsers(email string, userID string) ([]dto.UserDTO, error)
+	GetProfile(userID string) (*dto.UserDTO, error)	
 }
 
 type user struct {
@@ -57,6 +59,7 @@ func (s *user) SearchForUserNotInRoom(roomID string, email string) ([]dto.UserDT
 	users, err := s.queries.SearchUserNotInRoom(context.Background(), mysql.SearchUserNotInRoomParams{
 		Email: "%" + email + "%",
 		RoomID: roomID,
+		
 	})	
 	if err != nil {
 		return nil, err
@@ -69,4 +72,40 @@ func (s *user) SearchForUserNotInRoom(roomID string, email string) ([]dto.UserDT
 	}
 	
 	return dtos, nil
+}
+
+func (s *user) SearchUsers(email string, userID string) ([]dto.UserDTO, error) {
+	var args mysql.SearchUserParams
+	args.Email = "%" + email + "%"
+	args.UserID = userID
+	args.ID = userID
+
+	users, err := s.queries.SearchUser(context.Background(), args)	
+	if err != nil {
+		return nil, err
+	}
+
+	var dtos []dto.UserDTO
+	err = s.mapper.Map(&dtos, &users)
+	if err != nil {
+		return nil, err
+	}
+	
+	return dtos, nil
+}
+
+
+func (s *user) GetProfile(userID string) (*dto.UserDTO, error) {
+	user, err := s.queries.GetUser(context.Background(), userID)	
+	if err != nil {
+		return nil, err
+	}
+
+	var dto dto.UserDTO
+	err = s.mapper.Map(&dto, &user)
+	if err != nil {
+		return nil, err
+	}
+	
+	return &dto, nil
 }

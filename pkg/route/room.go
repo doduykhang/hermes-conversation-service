@@ -7,10 +7,17 @@ import (
 )
 
 func RoomRoute(r fiber.Router, roomController *controller.Room) {
-	user := r.Group("/room")
-	user.Post("/group", roomController.CreateGroupRoom)
-	user.Get("/group", roomController.GetUserRoom)
-	user.Get("/group/:roomID", roomController.GetRoomByID)
-	user.Post("/group/add-user", roomController.AddUserToRoom)
-	user.Delete("/group/remove-user", roomController.RemoveUserFromRoom)
+	room := r.Group("/room")
+
+	groupRoom := room.Group("/group")
+	groupRoom.Post("/", roomController.CreateGroupRoom)
+	groupRoom.Get("/", roomController.GetUserRoom)
+	groupRoom.Get("/:roomID", roomController.GetRoomByID)
+	groupRoom.Post("/add-user", roomController.AddUserToRoom)
+	groupRoom.Delete("/remove-user", roomController.RemoveUserFromRoom)
+
+	privateRoom := room.Group("/private")
+
+	privateRoom.Post("/", roomController.CreatePrivateRoom)
+	privateRoom.Get("/", roomController.GetUserPrivateRoom)
 }

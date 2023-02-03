@@ -34,10 +34,35 @@ func (u *User) CreateUser(c *fiber.Ctx) error {
 }
 
 func (u *User) SearchUserNotInRoom(c *fiber.Ctx) error {
-	userName := c.Params("userName")	
+	email := c.Params("email")	
 	roomID := c.Params("roomID")	
 
-	response, err := u.userService.SearchForUserNotInRoom(roomID, userName) 
+	response, err := u.userService.SearchForUserNotInRoom(roomID, email) 
+	if err != nil {
+        	return err
+    	}
+    	return c.JSON(response)
+}
+
+func (u *User) SearchUser(c *fiber.Ctx) error {
+	email := c.Params("email")	
+	userID := string(c.Request().Header.Peek("X-User-Id"))
+
+	response, err := u.userService.SearchUsers(email, userID) 
+	if err != nil {
+        	return err
+    	}
+    	return c.JSON(response)
+}
+
+
+func (u *User) GetUser(c *fiber.Ctx) error {
+	userID := string(c.Request().Header.Peek("X-User-Id"))
+	if userID == "" {
+		return fiber.ErrUnprocessableEntity
+	}
+
+	response, err := u.userService.GetProfile(userID) 
 	if err != nil {
         	return err
     	}

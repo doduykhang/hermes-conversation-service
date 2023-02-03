@@ -64,6 +64,61 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 	return i, err
 }
 
+const searchUser = `-- name: SearchUser :many
+SELECT id, email, first_name, last_name, avatar, created_at, updated_at, deleted_at 
+FROM users u
+WHERE u.email LIKE ?
+AND NOT EXISTS (
+	SELECT id, name, user_id, type, created_at, updated_at, deleted_at 
+	FROM rooms r
+	WHERE r.type = "PRIVATE"
+	AND (
+		SELECT COUNT(*)
+		FROM users_rooms ur
+		WHERE ur.room_id = r.id AND (ur.user_id = u.id OR ur.user_id = ?)
+	) = 2
+)
+AND u.id != ?
+`
+
+type SearchUserParams struct {
+	Email  string
+	UserID string
+	ID     string
+}
+
+func (q *Queries) SearchUser(ctx context.Context, arg SearchUserParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, searchUser, arg.Email, arg.UserID, arg.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.FirstName,
+			&i.LastName,
+			&i.Avatar,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const searchUserNotInRoom = `-- name: SearchUserNotInRoom :many
 SELECT id, email, first_name, last_name, avatar, created_at, updated_at, deleted_at 
 FROM users u

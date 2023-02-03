@@ -19,4 +19,5 @@ select *, (
     	WHERE u.id = m.user_id
 ) as sender
 from messages m
-where room_id = ?;
+where room_id = ?
+ORDER BY m.created_at DESC;

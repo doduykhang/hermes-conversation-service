@@ -7,7 +7,46 @@ package mysql
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
+	"time"
 )
+
+const checkPrivateRoomExists = `-- name: CheckPrivateRoomExists :one
+SELECT id, name, user_id, type, created_at, updated_at, deleted_at
+FROM rooms r
+WHERE r.type = "PRIVATE" 
+AND EXISTS (
+	SELECT ur.user_id
+	FROM users_rooms ur
+	WHERE ur.room_id = r.id AND ur.user_id = ?
+)
+AND EXISTS (
+	SELECT ur.user_id
+	FROM users_rooms ur
+	WHERE ur.room_id = r.id AND ur.user_id = ?
+)
+`
+
+type CheckPrivateRoomExistsParams struct {
+	UserID   string
+	UserID_2 string
+}
+
+func (q *Queries) CheckPrivateRoomExists(ctx context.Context, arg CheckPrivateRoomExistsParams) (Room, error) {
+	row := q.db.QueryRowContext(ctx, checkPrivateRoomExists, arg.UserID, arg.UserID_2)
+	var i Room
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.UserID,
+		&i.Type,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
 
 const checkUserInRoom = `-- name: CheckUserInRoom :one
 SELECT user_id, room_id 
@@ -61,14 +100,60 @@ func (q *Queries) DeleteRoom(ctx context.Context, id string) error {
 }
 
 const getRoomByID = `-- name: GetRoomByID :one
-SELECT id, name, user_id, type, created_at, updated_at, deleted_at 
-FROM rooms
-WHERE id = ?
+SELECT id, name, user_id, type, created_at, updated_at, deleted_at, (
+	SELECT JSON_ARRAYAGG(JSON_OBJECT('id', u.id, 'firstName', u.first_name, 'lastName', u.last_name, 'email', u.email, 'avatar', u.avatar))
+    	FROM users u
+    	WHERE u.id IN (
+		SELECT ur.user_id
+		FROM users_rooms ur
+		WHERE ur.room_id = r.id
+	) AND u.id != ?
+) as members
+FROM rooms r
+WHERE r.id = ?
 LIMIT 1
 `
 
-func (q *Queries) GetRoomByID(ctx context.Context, id string) (Room, error) {
-	row := q.db.QueryRowContext(ctx, getRoomByID, id)
+type GetRoomByIDParams struct {
+	ID   string
+	ID_2 string
+}
+
+type GetRoomByIDRow struct {
+	ID        string
+	Name      string
+	UserID    string
+	Type      string
+	CreatedAt time.Time
+	UpdatedAt sql.NullTime
+	DeletedAt sql.NullTime
+	Members   json.RawMessage
+}
+
+func (q *Queries) GetRoomByID(ctx context.Context, arg GetRoomByIDParams) (GetRoomByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getRoomByID, arg.ID, arg.ID_2)
+	var i GetRoomByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.UserID,
+		&i.Type,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.Members,
+	)
+	return i, err
+}
+
+const getRoomNoMembers = `-- name: GetRoomNoMembers :one
+SELECT id, name, user_id, type, created_at, updated_at, deleted_at FROM rooms r
+WHERE r.id = ?
+LIMIT 1
+`
+
+func (q *Queries) GetRoomNoMembers(ctx context.Context, id string) (Room, error) {
+	row := q.db.QueryRowContext(ctx, getRoomNoMembers, id)
 	var i Room
 	err := row.Scan(
 		&i.ID,
@@ -84,12 +169,13 @@ func (q *Queries) GetRoomByID(ctx context.Context, id string) (Room, error) {
 
 const getRoomThatIn = `-- name: GetRoomThatIn :many
 SELECT id, name, user_id, type, created_at, updated_at, deleted_at 
-FROM rooms
+FROM rooms r
 WHERE id IN (
 	SELECT ur.room_id 
 	FROM users_rooms ur
 	WHERE ur.user_id = ?
 )
+AND r.type = "GROUP"
 `
 
 func (q *Queries) GetRoomThatIn(ctx context.Context, userID string) ([]Room, error) {
@@ -109,6 +195,69 @@ func (q *Queries) GetRoomThatIn(ctx context.Context, userID string) ([]Room, err
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserPrivateRoom = `-- name: GetUserPrivateRoom :many
+SELECT id, name, user_id, type, created_at, updated_at, deleted_at, (
+	SELECT JSON_ARRAYAGG(JSON_OBJECT('id', u.id, 'firstName', u.first_name, 'lastName', u.last_name, 'avatar', u.avatar))
+    	FROM users u
+    	WHERE u.id IN (
+		SELECT ur.user_id
+		FROM users_rooms ur
+		WHERE ur.room_id = r.id
+	)
+) as members
+FROM rooms r
+WHERE r.type = "PRIVATE" 
+AND EXISTS (
+	SELECT user_id, room_id
+	FROM users_rooms ur
+	WHERE ur.user_id = ?
+	AND ur.room_id = r.id
+)
+`
+
+type GetUserPrivateRoomRow struct {
+	ID        string
+	Name      string
+	UserID    string
+	Type      string
+	CreatedAt time.Time
+	UpdatedAt sql.NullTime
+	DeletedAt sql.NullTime
+	Members   json.RawMessage
+}
+
+func (q *Queries) GetUserPrivateRoom(ctx context.Context, userID string) ([]GetUserPrivateRoomRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserPrivateRoom, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserPrivateRoomRow
+	for rows.Next() {
+		var i GetUserPrivateRoomRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.UserID,
+			&i.Type,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.Members,
 		); err != nil {
 			return nil, err
 		}

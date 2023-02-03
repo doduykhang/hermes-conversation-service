@@ -17,10 +17,12 @@ func NewRabbitMq(config *Config) *amqp.Connection {
 
 func getRabbitMQConnString(rabbitMQ RabbitMQ) string {
 	return fmt.Sprintf(
-		"amqp://%s:%s@%s:%s/",
+		"%s://%s:%s@%s:%s/%s",
+		rabbitMQ.Protocol,
 		rabbitMQ.User,
 		rabbitMQ.Password,
 		rabbitMQ.Host,
 		rabbitMQ.Port,
+		rabbitMQ.VHost,
 	)
 }

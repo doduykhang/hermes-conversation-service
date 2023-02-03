@@ -53,6 +53,7 @@ select id, content, user_id, room_id, created_at, updated_at, deleted_at, (
 ) as sender
 from messages m
 where room_id = ?
+ORDER BY m.created_at DESC
 `
 
 type GetMessageOfRoomRow struct {
